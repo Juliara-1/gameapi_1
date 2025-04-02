@@ -1,3 +1,5 @@
+import os   #добавила с GPT
+
 """
 Django settings for gameapi project.
 
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'catalog',
     'drf_yasg',
+    'rest_framework',    #добавила с GPT
 ]
 
 REST_FRAMEWORK = {
@@ -85,11 +88,14 @@ WSGI_APPLICATION = 'gameapi.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'gameapi'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DATABASE_HOST', 'db'),
+        'PORT': os.getenv('DATABASE_PORT', '5432'),    #изменила с GPT
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
