@@ -41,8 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'catalog',
-    'drf_yasg',
-    'rest_framework',    #добавила с GPT
+    'drf_yasg'
 ]
 
 REST_FRAMEWORK = {
