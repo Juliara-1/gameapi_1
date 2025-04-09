@@ -1,0 +1,19 @@
+from django.db import migrations, models  # Добавлено models
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ('catalog', '0002_previous_migration'),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name='game',
+            name='price',
+            field=models.DecimalField(
+                max_digits=10,
+                decimal_places=2,
+                default=0.00,  # значение по умолчанию
+                verbose_name='Цена'  # необязательно
+            ),
+        ),
+    ]
