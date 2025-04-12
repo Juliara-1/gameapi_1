@@ -2,68 +2,90 @@ import json
 import time
 import logging
 import uuid
+from catalog.serializers import SearchQuerySerializer, ProviderSerializer, GameSerializer, SearchQueryInputSerializer
+from django.http import JsonResponse
 from rest_framework import viewsets
 from .models import Provider, Game
-from .serializers import ProviderSerializer, GameSerializer
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
+from django.conf import settings
+from .kafka_client import KafkaProducerClient, KafkaConsumerClient
+from drf_yasg.utils import swagger_auto_schema
 
 logger = logging.getLogger(__name__)
 
 class SearchQueryView(APIView):
-    KAFKA_TOPIC = 'search_topic'
-    RESPONSE_TOPIC = 'response_topic'
-    CACHE_TTL = 60 * 60 * 24  # 24 часа
-
     def __init__(self):
-        # Инициализация Kafka клиентов (реализуйте ваш Kafka клиент)
-        self.kafka_producer = KafkaProducerClient()
-        self.kafka_consumer = KafkaConsumerClient()
-
-    def post(self, request):
-        serializer = SearchQuerySerializer(data=request.data)
-        
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        super().__init__()
+        self.kafka_config = settings.KAFKA_CONFIG
+        self._init_kafka_clients()
+    
+    def _init_kafka_clients(self):
+        """Инициализация клиентов с обработкой ошибок и fallback"""
         try:
-            query = serializer.validated_data['query']
-            cache_key = f"search:{query}"
-            
-            # Проверка кэша
-            cached_result = cache.get(cache_key)
-            if cached_result:
-                logger.info(f"Cache hit for query: {query}")
-                return Response({
-                    'message': 'Result from cache',
-                    'data': cached_result,
-                    'cache': True
-                }, status=status.HTTP_200_OK)
+            self.producer = KafkaProducerClient()
+            self.consumer = KafkaConsumerClient(
+                group_id='search_query_group'  # Уникальный group_id для этого consumer
+            )
+        except Exception as e:
+            # Fallback: можно использовать заглушки или альтернативные механизмы
+            self.producer = None
+            self.consumer = None
 
-            # Если нет в кэше - отправляем в Kafka
-            request_id = str(uuid.uuid4())
-            message = {
-                'query': query,
-                'request_id': request_id
-            }
-            
-            self.kafka_producer.send_message(
-                topic=self.KAFKA_TOPIC,
-                value=json.dumps(message).encode('utf-8')
+    @swagger_auto_schema(
+        request_body=SearchQueryInputSerializer,
+        responses={
+            200: "Успешный поиск",
+            400: "Неверные параметры запроса",
+            503: "Сервис поиска недоступен"
+        },
+        operation_description="Поиск игр по запросу с использованием Kafka и кеширования",
+        tags=['Поиск']
+    )
+    def post(self, request):
+        if not self.producer or not self.consumer:
+            return Response(
+                {'error': 'Kafka service unavailable'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-            # Ожидаем ответ
-            response = self.kafka_consumer.consume(
-                topics=[self.RESPONSE_TOPIC],
+        serializer = SearchQuerySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        query = serializer.validated_data['query']
+        cache_key = f"search:{query}"
+        
+        # Проверка кэша
+        if cached := cache.get(cache_key):
+            return Response({
+                'message': 'Result from cache',
+                'data': cached,
+                'cache': True
+            })
+  
+        # Отправка в Kafka
+        request_id = str(uuid.uuid4())
+        message = {
+            'query': query,
+            'request_id': request_id,
+            'timestamp': time.time()
+        }
+        try:
+            self.producer.send_message(
+                topic=self.kafka_config['search_topic'],
+                value=message
+            )
+            
+            # Ожидание ответа
+            response = self.consumer.consume_message(
+                topic=self.kafka_config['response_topic'],
                 timeout=10.0
             )
             
-            if response and response['request_id'] == request_id:
-                # Сохраняем в кэш
+            if response and response.get('request_id') == request_id:
                 cache.set(cache_key, response['data'], self.CACHE_TTL)
                 return Response({
                     'message': 'Result from Kafka',
@@ -75,11 +97,15 @@ class SearchQueryView(APIView):
                 {'error': 'Timeout waiting for response'},
                 status=status.HTTP_504_GATEWAY_TIMEOUT
             )
-
+            
         except Exception as e:
-            logger.error(f"Search error: {str(e)}")
+            error_prefix = "Kafka Service Error: "
+            error_message = f"{error_prefix}Search service temporary unavailable. Reason: {str(e)}"
+    
+            # Логирование полной ошибки с traceback
+            logger.exception(error_message)
             return Response(
-                {'error': str(e)},
+                {'error': 'Search service temporary unavailable'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
