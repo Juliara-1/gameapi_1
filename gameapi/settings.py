@@ -167,9 +167,3 @@ CACHES = {
         }
     }
 }
-
-KAFKA_CONFIG = {
-    'bootstrap_servers': 'kafka:9092',
-    'search_topic': 'search_topic',
-    'response_topic': 'response_topic'
-}

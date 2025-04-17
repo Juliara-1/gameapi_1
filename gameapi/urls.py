@@ -1,21 +1,14 @@
-
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
-from catalog.views import ProviderViewSet, GameViewSet
-
-router = DefaultRouter()
-router.register(r'providers', ProviderViewSet)
-router.register(r'games', GameViewSet)
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Game API",
+        title="Game Search API",
         default_version='v1',
-        description="API для управления играми и провайдерами",
+        description="API для поиска игр и провайдеров",
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
@@ -23,9 +16,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),  # Убрали явный namespace
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=1), name='swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='redoc'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('catalog/', include('catalog.urls')),
-    
 ]
