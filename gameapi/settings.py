@@ -1,4 +1,5 @@
-import os 
+import os   #добавила с GPT
+
 """
 Django settings for gameapi project.
 
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-q^8nmjxpm2_ia6-&vst=03#pikdzi8b^)tq3z!+5ply3uk_mct
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -38,9 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions',
     'rest_framework',
-    'corsheaders',
     'catalog',
     'drf_yasg',
     'gameapi'
@@ -52,17 +51,6 @@ REST_FRAMEWORK = {
     ]
 }
 
-# Укажите Swagger использовать свой кэш
-SWAGGER_SETTINGS = {
-    'DEFAULT_CACHE_TIMEOUT': 0,
-    'SECURITY_DEFINITIONS': {
-        'Basic': {
-            'type': 'basic'
-        }
-    },
-    'USE_SESSION_AUTH': False,
-    'DEFAULT_CACHE': 'swagger'  # Используем dummy-кэш для Swagger
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -72,14 +60,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.cache.UpdateCacheMiddleware',
-    'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
-CACHE_MIDDLEWARE_ALIAS = 'default'
-CACHE_MIDDLEWARE_SECONDS = 1  
-CACHE_MIDDLEWARE_KEY_PREFIX = 'gameapi_'
 ROOT_URLCONF = 'gameapi.urls'
 
 TEMPLATES = [
@@ -111,7 +93,7 @@ DATABASES = {
         'USER': os.getenv('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
         'HOST': os.getenv('DATABASE_HOST', 'db'),
-        'PORT': os.getenv('DATABASE_PORT', '5432'),    
+        'PORT': os.getenv('DATABASE_PORT', '5432'),    #изменила с GPT
     }
 }
 
@@ -155,15 +137,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    }
-}
