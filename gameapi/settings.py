@@ -107,11 +107,11 @@ WSGI_APPLICATION = 'gameapi.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'gameapi'),
-        'USER': os.getenv('POSTGRES_USER', 'postgres'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DATABASE_HOST', 'db'),
-        'PORT': os.getenv('DATABASE_PORT', '5432'),    
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',  # This matches your service name in docker-compose
+        'PORT': '5432',
     }
 }
 
@@ -158,18 +158,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
+KAFKA_CONFIG = {
+    'bootstrap_servers': 'kafka:9092', 
+    'group_id': 'fastapi_consumer',   
+    'auto_offset_reset': 'earliest',   
+}
+
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
+        "LOCATION": "redis://redis:6379/1",  # Используем имя сервиса `redis`
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SERIALIZER": "django_redis.serializers.json.JSONSerializer",  # Используем JSON
         }
     }
-}
-
-KAFKA_CONFIG = {
-    'bootstrap_servers': 'kafka:9092',
-    'search_topic': 'search_topic',
-    'response_topic': 'response_topic'
 }

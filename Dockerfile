@@ -1,26 +1,21 @@
-# Базовый образ Python
-FROM python:3.10-slim  
+# Используем официальный образ Python
+FROM python:3.10
 
-# Устанавливаем системные зависимости
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    librdkafka-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Устанавливаем переменные окружения
+ENV PYTHONUNBUFFERED 1
+WORKDIR /game_service
 
-# Рабочая директория
-WORKDIR /app
+# Копируем файлы проекта
+COPY requirements.txt requirements.txt
 
-# Сначала копируем только requirements.txt для кэширования слоев
-COPY requirements.txt .
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем Python зависимости
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Копируем остальные файлы проекта
+# Копируем остальной код проекта
 COPY . .
 
-# Команда для запуска
+# Открываем порт Django (если используется runserver)
+EXPOSE 8000
+
+# Запуск приложения
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

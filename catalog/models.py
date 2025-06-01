@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.cache import cache
 
 class Provider(models.Model):
     name = models.CharField(max_length=100)  # Название компании
@@ -17,6 +18,19 @@ class Game(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.provider.name})"
-@receiver(post_save, sender=Game)
-def clear_game_cache(sender, instance, **kwargs):
-    cache.delete('game_list_cache_key') 
+
+class Feature(models.Model):
+    name = models.CharField(max_length=255)
+    type = models.IntegerField()
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="features")
+
+    def __str__(self):
+        return f"{self.name} (Game: {self.game.name})"
+
+class SearchQuery(models.Model):
+    query = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.query
+
+
