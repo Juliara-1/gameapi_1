@@ -61,7 +61,9 @@ class SearchQueryView(APIView):
                 self.kafka_producer.send_message(topic=self.KAFKA_TOPIC, message_data=message_data)
 
                 # Ожидаем ответа от FastAPI
-                response_message = self.kafka_consumer.consume_message(self.RESPONSE_TOPIC, timeout=10)
+                logger.info(f"Waiting for response in topic: {self.RESPONSE_TOPIC}")
+                response_message = self.kafka_consumer.consume_message(self.RESPONSE_TOPIC, timeout=100)
+                logger.info(f"Response received: {response_message}")
                 self.kafka_consumer.close()
 
                 if response_message and response_message.get('request_id') == request_id:
@@ -76,7 +78,17 @@ class SearchQueryView(APIView):
                     )
                 else:
                     return Response(
-                        {'error': 'No response received from FastAPI'},
+                        {
+                            'error': 'No valid response received from FastAPI',
+                            'response_received': response_message,  # Добавляем полученный ответ
+                            'expected_request_id': request_id,
+                            'actual_request_id': response_message.get('request_id') if response_message else None,
+                            'debug_info': {
+                                'kafka_response_topic': self.RESPONSE_TOPIC,
+                                'timeout_seconds': 100,
+                                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                            }
+                        },
                         status=status.HTTP_504_GATEWAY_TIMEOUT
                     )
 

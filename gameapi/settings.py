@@ -77,6 +77,21 @@ MIDDLEWARE = [
     'django.middleware.cache.FetchFromCacheMiddleware',
 ]
 
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
 CACHE_MIDDLEWARE_ALIAS = 'default'
 CACHE_MIDDLEWARE_SECONDS = 1  
 CACHE_MIDDLEWARE_KEY_PREFIX = 'gameapi_'
@@ -158,21 +173,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-KAFKA_BROKER = os.getenv('KAFKA_BROKER', 'kafka:9092')
-KAFKA_CONFIG = {
-    'bootstrap_servers': 'kafka:9092', 
-    'group_id': 'fastapi_consumer',   
-    'auto_offset_reset': 'earliest',   
-}
-
-
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",  # Используем имя сервиса `redis`
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "SERIALIZER": "django_redis.serializers.json.JSONSerializer",  # Используем JSON
-        }
-    }
-}
