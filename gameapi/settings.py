@@ -116,7 +116,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'gameapi.wsgi.application'
 
 
-# Database
+# Databasee
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
