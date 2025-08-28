@@ -1,4 +1,3 @@
-# views.py
 import os
 import json
 import time
@@ -60,12 +59,14 @@ class SearchQueryView(APIView):
                 logger.info(f"Sending message to Kafka: {message_data}")
                 self.kafka_producer.send_message(topic=self.KAFKA_TOPIC, message_data=message_data)
 
-                # Ожидаем ответа от FastAPI
+                print('Ожидаем ответа от FastAPI')
                 logger.info(f"Waiting for response in topic: {self.RESPONSE_TOPIC}")
                 response_message = self.kafka_consumer.consume_message(self.RESPONSE_TOPIC, timeout=100)
                 logger.info(f"Response received: {response_message}")
                 self.kafka_consumer.close()
 
+                print(response_message)
+                
                 if response_message and response_message.get('request_id') == request_id:
                     # Сохраняем результат в кеш
                     self.cache.set(cache_key, response_message, timeout=3600)  # Кешируем на 1 час
